@@ -36,6 +36,7 @@ def save_order():
         return jsonify({'error': '缺少必要参数'}), 400
 
     order_items_json = json.dumps(order_items)
+    order_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # 获取当前时间
 
     try:
         with get_db_connection() as conn:
@@ -82,10 +83,28 @@ def get_orders():
                         'user_id': row['user_id'],  # 使用user_id代替order_id
                         'order_items': json.loads(row['order_items']),
                         'total_price': float(row['total_price']),
+                        'order_date' : row['order_date']
                     }
                     for row in cursor
                 ]
         return jsonify({'status': 'success', 'orders': orders}), 200
+
+    except pymssql.Error as db_err:
+        return jsonify({'error': '数据库错误', 'details': str(db_err)}), 500
+    except Exception as e:
+        return jsonify({'error': '服务器错误', 'details': str(e)}), 500
+
+
+# API: 获取订单数量
+@orders_bp.route('/count', methods=['GET'])
+def get_order_count():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM Orders")
+                count = cursor.fetchone()[0]  # 获取总数
+
+        return jsonify({'status': 'success', 'count': count}), 200
 
     except pymssql.Error as db_err:
         return jsonify({'error': '数据库错误', 'details': str(db_err)}), 500

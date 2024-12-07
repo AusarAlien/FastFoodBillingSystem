@@ -52,3 +52,25 @@ def get_menu():
         # 最后确保数据库连接被关闭
         if 'conn' in locals():
             conn.close()
+
+# 获取菜单项数量
+@menu_bp.route('/count', methods=['GET'])
+def get_menu_count():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM MenuItems")
+        count = cursor.fetchone()[0]  # 获取菜单项数量
+
+        return jsonify({'status': 'success', 'count': count}), 200
+
+    except pyodbc.DatabaseError as db_error:
+        print(f"Database error: {db_error}")
+        return jsonify({'error': '数据库错误，无法加载菜单项数量'}), 500
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({'error': '无法加载菜单项数量'}), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
